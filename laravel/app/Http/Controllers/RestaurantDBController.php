@@ -21,16 +21,30 @@ class RestaurantDBController extends Controller {
         $option = $request->query('option');
         if ($option == '1') {//option = 1, means city
             $city = $request->query('name');
-            $restaurants = DB::table('restaurants')->where('city', $city)->get();
+            $restaurants = DB::table('restaurants')
+                    ->where('city', $city)
+                    ->select('id', 'name', 'description', 'city', 'logo', 'reviewNum', 'star')
+                    ->orderBy('reviewNum', 'desc')
+                    ->get();
         } else if ($option == '2') {// means province
             $province = $request->query('name');
-            $restaurants = DB::table('restaurants')->where('province', $province)->get();
+            $restaurants = DB::table('restaurants')->where('province', $province)
+                    ->select('id', 'name', 'description', 'city', 'logo', 'reviewNum', 'star')
+                    ->orderBy('reviewNum', 'desc')
+                    ->get();
         } else if ($option == '3') {// means province
             $country = $request->query('name');
-            $restaurants = DB::table('restaurants')->where('country', $country)->get();
+            $restaurants = DB::table('restaurants')->where('country', $country)
+                    ->select('id', 'name', 'description', 'city', 'logo', 'reviewNum', 'star')
+                    ->orderBy('reviewNum', 'desc')
+                    ->get();
         } else if ($option == '4') {
-            $restaurants = DB::table('restaurants')->get();
+            $restaurants = DB::table('restaurants')
+                    ->select('id', 'name', 'description', 'city', 'logo', 'reviewNum', 'star')
+                    ->orderBy('reviewNum', 'desc')
+                    ->get();
         }
+
         return response()->json($restaurants, 200);
     }
 

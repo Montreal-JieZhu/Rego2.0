@@ -21,13 +21,28 @@ class LocationRESTFulAPIController extends Controller {
          */
         $option = $request->query('option');
         if ($option == '1') {
-            $countryName = DB::connection('mysql3')->select('SELECT * FROM countries');
-            //return response()->json(array($countryName), 200);
-            return response()->json($countryName, 200);
+            //$countryList = DB::connection('mysqlLocationDB')->table('countries')->get();
+            $countryList = DB::table('countries')->get();
+            return response()->json($countryList, 200);
         } else if ($option == '2') {
+            $countryId = $request->query('countryId');
+            //$provinceList = DB::connection('mysqlLocationDB')->table('provinces')->where('countryCode', $countryCode)->get();
+            $provinceList = DB::table('regions')->where('country_id', $countryId)->get();
+            return response()->json($provinceList, 200);
+        } else if ($option == '3') {
+            $countryId = $request->query('countryId');
+            $regionId = $request->query('regionId');
+            //echo $countryId;
+            //echo $regionId;
+            $cityList = DB::table('cities')->where([['region_id', '=', $regionId], ['country_id', '=', $countryId],])->select('id', 'name')->get();
+            return response()->json($cityList, 200);
+        } else if ($option == '4') {
             $countryCode = $request->query('country');
-            //echo $countryCode;
-            $provinceName = DB::connection('mysql3')->select('SELECT * FROM superexpress.provinces where countryCode=?', [$countryCode]);
+            $countryName = DB::connection('mysqlLocationDB')->table('countries')->where('code', $countryCode)->select('name')->get();
+            return response()->json($countryName, 200);
+        } else if ($option == '5') {
+            $provinceCode = $request->query('provinceCode');
+            $provinceName = DB::connection('mysqlLocationDB')->table('provinces')->where('code', $provinceCode)->select('name')->get();
             return response()->json($provinceName, 200);
         }
     }

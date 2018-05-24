@@ -48,7 +48,7 @@ return [
             'strict' => false,
             'engine' => null,
         ],
-        'mysql2' => [
+        'mysqlInCloud' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST_FIRST', 'localhost'),
             'port' => env('DB_PORT_FIRST', '3306'),
@@ -62,7 +62,7 @@ return [
             'strict' => false,
             'engine' => null,
         ],
-        'mysql3' => [
+        'mysqlLocationDB' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST_SECOND', 'localhost'),
             'port' => env('DB_PORT_SECOND', '3306'),

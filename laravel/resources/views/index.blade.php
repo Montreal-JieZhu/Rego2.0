@@ -16,6 +16,7 @@
     var country = null;
     var city = null;
     var province = null;
+    var productItem = [];
     $.ajaxSetup({
         async: false
     });
@@ -69,6 +70,7 @@
                 createBreadcrumb();
                 loadCountriesList();
                 loadTopRestaurant(country, province, city);
+                loadAllRestaurant();
             } else {
                 window.alert('Geocoder failed due to: ' + status);
             }
@@ -146,7 +148,7 @@
         var topProductRequest = '/RestaurantRESTAPI?' + $.param(productQuery);
         var dataReturn;
         $.get(topProductRequest, function (data, status) {
-            //alert("Data: " + data + "\nStatus: " + status);
+            //alert("Data: " + data.regionRestaurant.length + "\nStatus: " + status);
             if (status === 'success') {
                 //alert(3);
                 dataReturn = data;
@@ -206,6 +208,7 @@
     }
     function loadTopRestaurant(pCountry, pProvince, pCity) {
         var data = getRestaurants(1, pCity);
+        //loadAllRestaurant(data);
         var recordNum = data.length;
         if (recordNum === 0) {
             data = getRestaurants(2, pProvince);
@@ -214,16 +217,103 @@
                 data = getRestaurants(3, pCountry);
                 recordNum = data.length;
                 if (recordNum === 0) {
-                    data = getRestaurants(4, pCountry);
+                    data = getRestaurants(4, '');
                     recordNum = data.length;
+                    if (recordNum !== 0) {
+                        $('#topTitle').text('Top Cuisines in the world');
+                    }
+                } else {
+                    $('#topTitle').text('Top Cuisines in ' + pCountry);
                 }
+            } else {
+                $('#topTitle').text('Top Cuisines in ' + pProvince);
             }
+        } else {
+            $('#topTitle').text('Top Cuisines in ' + pCity);
         }
+
         if (recordNum === 0) {
-            alert('Sorry! There is no any available restaurant!');
+            $('#topTitle').text('Sorry! There is no any available restaurant!');
         } else {
             appendRestaurantsToTop(recordNum, data);
         }
+    }
+
+    function loadAllRestaurant() {
+        var data = getRestaurants(4, '');
+        var recordNum = data.length;
+        var itemNum = Math.ceil(recordNum / 3);
+        for (var i = 0; i < recordNum; i++) {
+            var product = data[i];
+            var starnum = product.star;
+            var starContent = '';
+            for (var j = 0; j < starnum; j++) {
+                starContent += '<i class="fa fa-star"></i>';
+            }
+            //alert(i);
+            productItem[i] = ('<div class="col-md-4 col-sm-6 product-item">' +
+                    '<div class="product-container">' +
+                    '<div class="row">' +
+                    '<div class="col-md-12">' +
+                    '<a href="#" class="product-image">' +
+                    '<img src="' + 'assets5/img/' + product.logo + '">' +
+                    '</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="row">' +
+                    '<div class="col-xs-8">' +
+                    '<h2>' +
+                    '<a href="#">' +
+                    product.name +
+                    '</a>' +
+                    '</h2>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="product-rating">' +
+                    starContent +
+                    '<a href="#" class="small-text">' +
+                    product.reviewNum + ' reviews' +
+                    '</a>' +
+                    '</div>' +
+                    '<div class="row">' +
+                    '<div class="col-xs-12">' +
+                    '<p class="product-description">' +
+                    product.description +
+                    '</p>' +
+                    '<div class="row">' +
+                    '<div class="col-xs-6">' +
+                    '<button class="btn btn-default" type="button">' +
+                    'Reserve Now!' +
+                    '</button>' +
+                    '</div>' +
+                    '<div class="col-xs-6">' +
+                    '<p class="product-price">' +
+                    '$599.00' +
+                    '</p>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>');
+        }
+
+        window.pagObj = $('#pagination').twbsPagination({
+            totalPages: itemNum,
+            visiblePages: 3,
+            onPageClick: function (event, page) {
+                console.info(page + ' (from options)');
+                var showContent = '';
+                for (var ii = (page - 1) * 3; ii < page * 3 && ii < recordNum; ii++) {
+                    //alert(productItem[ii]);
+                    showContent += productItem[ii];
+                }
+                //alert(showContent);
+                $('#allRestaurantList').html(showContent);
+            }
+        }).on('page', function (event, page) {
+            console.info(page + ' (from event listening)');
+        });
     }
     //getLocation();
 </script>
@@ -231,7 +321,7 @@
 @endsection
 @section('content')
 <div class="container container-fluid">
-    <form class="form-inline right " action="/action_page.php">
+    <form class="form-inline right">
         <div class="input-group ">
             <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
             <select class="form-control" id="countryList" name="countryList" style="width: 150px">
@@ -241,9 +331,10 @@
             <select class="form-control" id="provinceList" name="provinceList" style="width: 150px">
             </select>
             <span class="input-group-addon">City</span>
-            <input id="cityName" name="cityName" type="text" class="form-control" placeholder="City Name" style="width: 150px">
+            <select class="form-control" id="cityList" name="cityList" style="width: 150px">
+            </select>
             <div class="input-group-btn">
-                <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+                <button class="btn btn-default" id='searchRegionBtn' type="button"><i class="glyphicon glyphicon-search"></i></button>
             </div>
         </div>
     </form>
@@ -256,7 +347,7 @@
         <li id="activeLi" class="active"></li>
     </ul>
     <div class="row">
-        <div class="col-md-11"><h2 id="topTitle">Top Cuisines in Montreal</h2></div>
+        <div class="col-md-11"><h2 id="topTitle">Top Cuisines</h2></div>
         <div class="col-md-1">
             <a class="left carousel-control" href="#myCarousel" data-slide="prev">
                 <span class="glyphicon glyphicon-chevron-left"></span>
@@ -425,30 +516,67 @@
 
 <div class="projects-horizontal container-fluid">
     <div class="container">
-
         <div class="intro">
-            <h2 class="text-center">Projects </h2>
-            <p class="text-center">Nunc luctus in metus eget fringilla. Aliquam sed justo ligula. Vestibulum nibh erat, pellentesque ut laoreet vitae. </p>
+            <h2 class="text-center">
+                Projects
+            </h2>
+            <p class="text-center">
+                Nunc luctus in metus eget fringilla. Aliquam sed justo ligula. Vestibulum nibh erat, pellentesque ut laoreet vitae.
+            </p>
         </div>
-        <div class="row product-list">
+        <div class="container">
+            <div id='allRestaurantList' class="row product-list"></div>
+            <div class="col-md-7"></div>
+            <div class="col-md-5">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination right" id="pagination"></ul>
+                </nav>
+            </div>
+        </div>
+        <!--<div class="row product-list" hidden='true'>
             <div class="col-md-4 col-sm-6 product-item">
                 <div class="product-container">
                     <div class="row">
-                        <div class="col-md-12"><a href="#" class="product-image"><img src="assets5/img/iphone6.jpg"></a></div>
+                        <div class="col-md-12">
+                            <a href="#" class="product-image">
+                                <img src="assets5/img/iphone6.jpg">
+                            </a>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-xs-8">
-                            <h2><a href="#">iPhone 6s</a></h2>
+                            <h2>
+                                <a href="#">
+                                    iPhone 6s
+                                </a>
+                            </h2>
                         </div>
                     </div>
-                    <div class="product-rating"><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half"></i><a href="#" class="small-text">82 reviews</a></div>
+                    <div class="product-rating">
+                        <i class="fa fa-star"></i>
+                        <i class="fa fa-star"></i>
+                        <i class="fa fa-star"></i>
+                        <i class="fa fa-star"></i>
+                        <i class="fa fa-star-half"></i>
+                        <a href="#" class="small-text">
+                            82 reviews
+                        </a>
+                    </div>
                     <div class="row">
                         <div class="col-xs-12">
-                            <p class="product-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ornare sem sed nisl dignissim, facilisis dapibus lacus vulputate. Sed lacinia lacinia magna. </p>
+                            <p class="product-description">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ornare sem sed nisl dignissim, facilisis dapibus lacus vulputate. Sed lacinia lacinia magna.
+                            </p>
                             <div class="row">
-                                <div class="col-xs-6"><button class="btn btn-default" type="button">Buy Now!</button></div>
                                 <div class="col-xs-6">
-                                    <p class="product-price">$599.00 </p>
+                                    <button class="btn btn-default" type="button">
+                                        Buy Now!
+                                    </button>
+                                </div>
+                                <div class="col-xs-6">
+                                    <p class="product-price">
+                                        $599.00
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -480,6 +608,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-md-4 col-sm-6 product-item">
                 <div class="product-container">
                     <div class="row">
@@ -505,9 +634,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 </div>
+<!--
 <div class="container">
     <div id="page-content"></div>
     <div class="col-md-7"></div>
@@ -516,25 +646,29 @@
             <ul class="pagination right" id="pagination"></ul>
         </nav>
     </div>
-</div> <br><br>
+</div>
+--><br><br>
 @endsection
 @section('footer')
 @parent
 <button onclick="loadTopRestaurant()">Try It</button>
 <p id="demo"></p>
-<script type="text/javascript">
-    $(function () {
-        window.pagObj = $('#pagination').twbsPagination({
-            totalPages: 35,
-            visiblePages: 5,
-            onPageClick: function (event, page) {
-                console.info(page + ' (from options)');
-                $('#page-content').text('Page ' + page);
-            }
-        }).on('page', function (event, page) {
-            console.info(page + ' (from event listening)');
-        });
-    });</script>
+<script>
+    /*
+     $(function () {
+     window.pagObj = $('#pagination').twbsPagination({
+     totalPages: 35,
+     visiblePages: 5,
+     onPageClick: function (event, page) {
+     console.info(page + ' (from options)');
+     $('#page-content').text('Page ' + page);
+     }
+     }).on('page', function (event, page) {
+     console.info(page + ' (from event listening)');
+     });
+     });
+     */
+</script>
 <script>
     var x = document.getElementById("demo");
     $(document).ready(function () {
@@ -551,33 +685,95 @@
         });
         //This part is for refresh provincelist everytime we change the contry list
         $("#countryList").change(function () {
-            var selectedVal = $(this).val();
-            loadProvincesList(selectedVal);
-            selectedOption = '[value=' + selectedVal + ']';
+            var countryId = $(this).val();
+            //alert($(this).text());
+            var selectedOption = '[value=' + countryId + ']';
+            var countryName = $(this).find(selectedOption).text();
             $('#locationBreadcrumb').empty();
-            emptyLi = $('#breadcrumbLi').clone().removeAttr("id");
-            emptyLi.find('a').text($(this).find(selectedOption).text());
+            var emptyLi = $('#breadcrumbLi').clone().removeAttr("id");
+            emptyLi.find('a').text(countryName);
             emptyLi.appendTo('#locationBreadcrumb');
-            setCookie('rego_country', $(this).find(selectedOption).text(), 1);
+
+            loadProvincesList(countryId);
+
+            setCookie('rego_country', countryName, 1);
         });
         $("#provinceList").change(function () {
-            var selectedVal = $(this).val();
-            selectedOption = '[value=' + selectedVal + ']';
-            emptyLi = $('#breadcrumbLi').clone().removeAttr("id");
-            emptyLi.find('a').text($(this).find(selectedOption).text());
-            if ($('#locationBreadcrumb').children().length > 1) {
+            var regionId = $(this).val();
+            var countryId = $('#countryList').val();
+            var selectedOption = '[value=\'' + regionId + '\']';
+            var provinceName = $(this).find(selectedOption).text();
+            var emptyLi = $('#breadcrumbLi').clone().removeAttr("id");
+            emptyLi.find('a').text(provinceName);
+            while ($('#locationBreadcrumb').children().length > 1) {
                 $("#locationBreadcrumb li:eq(1)").remove();
             }
             $("#locationBreadcrumb li:eq(0)").after(emptyLi);
-            setCookie('rego_province', $(this).find(selectedOption).text(), 1);
+
+            loadCitiesList(countryId, regionId);
+
+            setCookie('rego_province', provinceName, 1);
+        });
+
+        $("#cityList").change(function () {
+            var cityId = $(this).val();
+            var selectedOption = '[value=\'' + cityId + '\']';
+            var cityName = $(this).find(selectedOption).text();
+            var emptyLi = $('#breadcrumbLi').clone().removeAttr("id");
+            emptyLi.find('a').text(cityName);
+            while ($('#locationBreadcrumb').children().length > 2) {
+                $("#locationBreadcrumb li:eq(2)").remove();
+            }
+            $("#locationBreadcrumb li:eq(1)").after(emptyLi);
+            setCookie('rego_city', cityName, 1);
+        });
+
+        $('#searchRegionBtn').click(function () {
+            var countryCode = $('#countryList').val();
+            var provinceCode = $('#provinceList').val();
+            var cityName = $('#cityName').val();
+            var countrySelector = '[value=\'' + countryCode + '\']';
+            var countryName = $('#countryList').find(countrySelector).text();
+            var provinceSelector = '[value=\'' + provinceCode + '\']';
+            var provinceName = $('#provinceList').find(provinceSelector).text();
+            alert(countryName);
+            alert(provinceName);
+            //loadTopRestaurant(pCountry, pProvince, pCity);
         });
     });
-    function loadProvincesList(countryCode) {
+    function loadCitiesList(countryId, regionId) {
+        //alert(currentCountryInList);
+        $('#cityList').empty();
+        var cityQuery = new Object();
+        cityQuery.option = 3;
+        cityQuery.countryId = countryId;
+        cityQuery.regionId = regionId;
+        var cityRequest = '/LocationRESTAPI?' + $.param(cityQuery);
+        //alert(provinceRequest);
+        $.get(cityRequest, function (data, status) {
+            //alert("Data: " + data + "\nStatus: " + status);
+            if (status === 'success') {
+                //$("#demo").html(data);
+                var len = data.length;
+                if (len > 0) {
+                    for (var i = 0; i < len; i++) {
+                        //$("<option></option>").text(data[i]['name']).val(data[i]['code']).appendTo('#provinceList');
+                        if (city === data[i]['name']) {
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).attr('selected', 'true').appendTo('#cityList');
+                        } else {
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).appendTo('#cityList');
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function loadProvincesList(countryId) {
         //alert(currentCountryInList);
         $('#provinceList').empty();
         var provinceQuery = new Object();
         provinceQuery.option = 2;
-        provinceQuery.country = countryCode;
+        provinceQuery.countryId = countryId;
         var provinceRequest = '/LocationRESTAPI?' + $.param(provinceQuery);
         //alert(provinceRequest);
         $.get(provinceRequest, function (data, status) {
@@ -586,13 +782,14 @@
                 //$("#demo").html(data);
                 var len = data.length;
                 if (len > 0) {
-
                     for (var i = 0; i < len; i++) {
-                        $("<option></option>").text(data[i]['name']).val(data[i]['code']).appendTo('#provinceList');
+                        //$("<option></option>").text(data[i]['name']).val(data[i]['code']).appendTo('#provinceList');
                         if (province === data[i]['name']) {
-                            $("<option></option>").text(data[i]['name']).val(data[i]['code']).attr('selected', 'true').appendTo('#provinceList');
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).attr('selected', 'true').appendTo('#provinceList');
+                            //alert(data[i]['id']);
+                            loadCitiesList(countryId, data[i]['id']);
                         } else {
-                            $("<option></option>").text(data[i]['name']).val(data[i]['code']).appendTo('#provinceList');
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).appendTo('#provinceList');
                         }
                     }
                 }
@@ -613,10 +810,11 @@
                     for (var i = 0; i < len; i++) {
                         if (country === data[i]['name']) {
                             //alert(data[i]['name']);
-                            $("<option></option>").text(data[i]['name']).val(data[i]['code']).attr('selected', 'true').appendTo('#countryList');
-                            loadProvincesList(data[i]['code']);
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).attr('selected', 'true').appendTo('#countryList');
+                            //alert(data[i]['id']);
+                            loadProvincesList(data[i]['id']);
                         } else {
-                            $("<option></option>").text(data[i]['name']).val(data[i]['code']).appendTo('#countryList');
+                            $("<option></option>").text(data[i]['name']).val(data[i]['id']).appendTo('#countryList');
                         }
                     }
                 }
